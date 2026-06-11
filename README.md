@@ -65,8 +65,8 @@ The design is webhook-first: subscribe to `call.transcript.completed` and the ev
 Requires Node >= 20. There is nothing to install — zero dependencies.
 
 ```bash
-git clone <this-repo> talkback-quo
-cd talkback-quo
+git clone <this-repo> talkback
+cd talkback
 cp .env.example .env     # fill in QUO_API_KEY, QUO_WEBHOOK_SECRET, LLM_API_KEY, LLM_MODEL
 node server.js           # listens on :8787
 ```
@@ -92,8 +92,8 @@ Then go live:
 ### Path 2 — Docker
 
 ```bash
-docker build -t talkback-quo .
-docker run --env-file .env -p 8787:8787 talkback-quo
+docker build -t talkback .
+docker run --env-file .env -p 8787:8787 talkback
 ```
 
 Same env contract, same `/webhook` endpoint. `GET /healthz` is your liveness probe.
@@ -182,7 +182,7 @@ Signatures are verified by default (both Quo signing schemes, timing-safe, fail 
 
 ## Beyond the hook
 
-Built and maintained by `<your name — your consulting link>`. The hosted version, vertical prompt packs (legal intake, contracting, real estate), and multi-system routing with daily did-it-actually-happen reconciliation are the kind of thing I build for clients — reach out at `<your-email>`. <!-- MAINTAINER: replace the placeholders above with your real name, contact, and consulting link before publishing -->
+Built and maintained by **Business Coconut** — [www.MrSands.com](https://www.MrSands.com). The hosted version, vertical prompt packs (legal intake, contracting, real estate), and multi-system routing with daily did-it-actually-happen reconciliation are the kind of thing I build for clients — reach out at csands@gmail.com.
 
 ## License
 

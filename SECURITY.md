@@ -86,6 +86,6 @@ The `/replay` endpoint (manual re-runs) is disabled unless `REPLAY_TOKEN` is set
 
 Please report suspected vulnerabilities privately — do not open a public issue for anything exploitable.
 
-- Contact: `<your-security-contact@example.com>` <!-- MAINTAINER: replace with a monitored address before publishing -->
+- Contact: csands@gmail.com
 - Include: affected file/version, reproduction steps, and impact.
 - You'll get an acknowledgment within 72 hours and a fix-or-status response within 14 days. Good-faith research against your **own** Quo workspace is welcome; never test against accounts you don't control.
