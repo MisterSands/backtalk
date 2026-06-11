@@ -1,5 +1,5 @@
 {
-  "name": "talkback",
+  "name": "backtalk",
   "version": "0.1.0",
   "description": "Hang-up hook for Quo (formerly OpenPhone): call ends, your LLM reads the transcript, spoken commitments become native Quo tasks linked to the call.",
   "type": "module",

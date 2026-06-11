@@ -1,6 +1,6 @@
 # Security
 
-TalkBack sits on a sensitive seam: it accepts unauthenticated-by-default HTTP from the internet, feeds the words of *arbitrary external callers* into an LLM, and turns the result into write actions on your phone system. This document describes the threat model and the defenses, in enough detail that you can audit them.
+BackTalk sits on a sensitive seam: it accepts unauthenticated-by-default HTTP from the internet, feeds the words of *arbitrary external callers* into an LLM, and turns the result into write actions on your phone system. This document describes the threat model and the defenses, in enough detail that you can audit them.
 
 ## Doctrine: transcripts are untrusted input
 

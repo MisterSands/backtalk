@@ -1,5 +1,5 @@
 {
-  "name": "TalkBack — promise catcher",
+  "name": "BackTalk — promise catcher",
   "flow": [
     {
       "id": 1,
@@ -293,10 +293,10 @@
                   },
                   {
                     "name": "User-Agent",
-                    "value": "talkback-make/0.1"
+                    "value": "backtalk-make/0.1"
                   }
                 ],
-                "data": "{\"title\":\"{{replace(replace(substring(ifempty(7.title; \"Follow up on call promise\"); 0; 80); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\",\"description\":\"{{replace(replace(substring(ifempty(7.detail; \"\"); 0; 200); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\\nQuote: \\\"{{replace(replace(ifempty(7.verbatim_quote; \"\"); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\\\"\\nSpoken due: {{replace(replace(ifempty(7.due_spoken; \"n/a\"); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\\nSource: talkback ref:{{4.callId}}/{{7.__IMTINDEX__}}\",\"activityId\":\"{{4.callId}}\",\"dueDate\":\"{{replace(replace(7.due_iso; /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\"}"
+                "data": "{\"title\":\"{{replace(replace(substring(ifempty(7.title; \"Follow up on call promise\"); 0; 80); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\",\"description\":\"{{replace(replace(substring(ifempty(7.detail; \"\"); 0; 200); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\\nQuote: \\\"{{replace(replace(ifempty(7.verbatim_quote; \"\"); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\\\"\\nSpoken due: {{replace(replace(ifempty(7.due_spoken; \"n/a\"); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\\nSource: backtalk ref:{{4.callId}}/{{7.__IMTINDEX__}}\",\"activityId\":\"{{4.callId}}\",\"dueDate\":\"{{replace(replace(7.due_iso; /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\"}"
               },
               "metadata": {
                 "designer": {
@@ -369,10 +369,10 @@
                   },
                   {
                     "name": "User-Agent",
-                    "value": "talkback-make/0.1"
+                    "value": "backtalk-make/0.1"
                   }
                 ],
-                "data": "{\"title\":\"{{replace(replace(substring(ifempty(7.title; \"Follow up on call promise\"); 0; 80); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\",\"description\":\"{{replace(replace(substring(ifempty(7.detail; \"\"); 0; 200); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\\nQuote: \\\"{{replace(replace(ifempty(7.verbatim_quote; \"\"); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\\\"\\nSpoken due: {{replace(replace(ifempty(7.due_spoken; \"n/a\"); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\\nSource: talkback ref:{{4.callId}}/{{7.__IMTINDEX__}}\",\"activityId\":\"{{4.callId}}\"}"
+                "data": "{\"title\":\"{{replace(replace(substring(ifempty(7.title; \"Follow up on call promise\"); 0; 80); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\",\"description\":\"{{replace(replace(substring(ifempty(7.detail; \"\"); 0; 200); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\\nQuote: \\\"{{replace(replace(ifempty(7.verbatim_quote; \"\"); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\\\"\\nSpoken due: {{replace(replace(ifempty(7.due_spoken; \"n/a\"); /[\"\\\\]/g; \"'\"); /[\\r\\n\\t]/g; \" \")}}\\nSource: backtalk ref:{{4.callId}}/{{7.__IMTINDEX__}}\",\"activityId\":\"{{4.callId}}\"}"
               },
               "metadata": {
                 "designer": {

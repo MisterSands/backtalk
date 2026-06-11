@@ -1,6 +1,6 @@
 # Architecture
 
-TalkBack is a deliberately small machine: one HTTP server, four stages, no database, no queue, no framework. This document explains the pipeline, the event model, the idempotency design, and the reasoning behind the parts that look opinionated.
+BackTalk is a deliberately small machine: one HTTP server, four stages, no database, no queue, no framework. This document explains the pipeline, the event model, the idempotency design, and the reasoning behind the parts that look opinionated.
 
 ## Design goals
 
@@ -14,7 +14,7 @@ TalkBack is a deliberately small machine: one HTTP server, four stages, no datab
 ```
   Quo workspace                         your infrastructure
  ───────────────                ───────────────────────────────────
-                                 TalkBack (server.js)
+                                 BackTalk (server.js)
 
   call ends
      │
@@ -83,7 +83,7 @@ Webhook providers redeliver; networks duplicate; operators replay. Three layers 
 
 2. **Optional file store.** `IDEMPOTENCY_FILE` persists the set across restarts as `{callId, status, ts}` entries — no transcript text, no PII. Writes are atomic (write temp file, then rename), so a crash mid-write can't corrupt the store.
 
-3. **Effect-level marker (survives store loss).** Every task description ends with `Source: talkback ref:<callId>/<n>`. Before creating tasks, the server lists existing tasks and skips any commitment whose marker already appears. This is best-effort (first page, workspace-wide) — it is the safety net under the claim, not a replacement for it.
+3. **Effect-level marker (survives store loss).** Every task description ends with `Source: backtalk ref:<callId>/<n>`. Before creating tasks, the server lists existing tasks and skips any commitment whose marker already appears. This is best-effort (first page, workspace-wide) — it is the safety net under the claim, not a replacement for it.
 
 ## Transcript processing
 
@@ -113,7 +113,7 @@ Each surviving commitment becomes one `POST /v1/tasks`:
 ```json
 {
   "title":       "Send the updated fee schedule",
-  "description": "Email Casey Caller the updated fee schedule.\nQuote: \"I'll email you the updated fee schedule tomorrow morning\"\nSpoken due: tomorrow morning\nSource: talkback ref:ACfictional0000000001/1",
+  "description": "Email Casey Caller the updated fee schedule.\nQuote: \"I'll email you the updated fee schedule tomorrow morning\"\nSpoken due: tomorrow morning\nSource: backtalk ref:ACfictional0000000001/1",
   "activityId":  "ACfictional0000000001",
   "dueDate":     "2026-06-12T09:00:00-04:00"
 }

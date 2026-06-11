@@ -342,7 +342,7 @@ for (const item of Array.isArray(parsed.commitments) ? parsed.commitments : []) 
       (detail || 'See quote.') +
       '\nQuote: "' + quoteClean + '"' +
       '\nSpoken due: ' + dueSpoken +
-      '\nSource: talkback ref:' + inputData.call_id + '/' + n,
+      '\nSource: backtalk ref:' + inputData.call_id + '/' + n,
     activityId: String(inputData.call_id || ''),
   };
   if (dueIso) payload.dueDate = dueIso;
@@ -363,7 +363,7 @@ Sample `payload_json`:
 ```json
 {
   "title": "Send the updated fee schedule",
-  "description": "Email the updated fee schedule to the caller\nQuote: \"I'll email you the updated fee schedule tomorrow morning.\"\nSpoken due: tomorrow morning\nSource: talkback ref:ACfictional0000000001/1",
+  "description": "Email the updated fee schedule to the caller\nQuote: \"I'll email you the updated fee schedule tomorrow morning.\"\nSpoken due: tomorrow morning\nSource: backtalk ref:ACfictional0000000001/1",
   "activityId": "ACfictional0000000001",
   "dueDate": "2026-06-12T09:00:00-05:00"
 }
@@ -381,7 +381,7 @@ Only continue if **Payload Json** · *Exists*. (This stops the sentinel item fro
 - **Headers:**
   - `Authorization` → your Quo API key, **raw — no `Bearer` prefix** (the API rejects `Bearer`)
   - `Content-Type` → `application/json`
-  - `User-Agent` → `talkback-zapier/0.1`
+  - `User-Agent` → `backtalk-zapier/0.1`
 
 Because Step 5 returned an array, this step runs once per surviving commitment — no Looping by Zapier needed. (If you prefer explicit loops, wrap Steps 6–7 in Looping by Zapier over the Step 5 line items instead.)
 
@@ -391,7 +391,7 @@ Successful response:
 { "data": { "taskId": "TKfictional0000000001", "revision": 1 } }
 ```
 
-The task lands in Quo linked to the call via `activityId`, with the due date when one was spoken, and a `Source: talkback ref:ACfictional0000000001/1` marker in the description.
+The task lands in Quo linked to the call via `activityId`, with the due date when one was spoken, and a `Source: backtalk ref:ACfictional0000000001/1` marker in the description.
 
 ## Step 8 (optional) — Dedupe with Storage by Zapier
 
