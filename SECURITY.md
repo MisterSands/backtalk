@@ -80,6 +80,7 @@ The `/replay` endpoint (manual re-runs) is disabled unless `REPLAY_TOKEN` is set
 
 - `ALLOW_UNSIGNED=1` and `DEBUG=1` both widen exposure (unauthenticated processing; transcript text in logs). Neither belongs in production.
 - Put the listener behind HTTPS (a tunnel or platform TLS terminator); webhook secrets ride in headers.
+- **There is no built-in rate limiting.** Signature verification requires reading the request body first, so an unauthenticated client can make the server read up to the 5 MB body cap per request before being rejected with a 401. This is bounded but not free — if the endpoint is exposed directly to the internet, put it behind a reverse proxy or platform edge (nginx, Caddy, Cloudflare, Render/Railway's ingress) with a request-rate and body-size limit. Real Quo deliveries are a few KB.
 - `GET /healthz` is unauthenticated by design and reveals nothing but liveness.
 
 ## Reporting a vulnerability

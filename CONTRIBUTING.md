@@ -5,7 +5,7 @@ Thanks for helping make hang-ups less forgetful. The project is intentionally sm
 ## Getting started
 
 ```bash
-git clone <this-repo> backtalk
+git clone https://github.com/MisterSands/backtalk.git
 cd backtalk
 npm test          # node:test — no network, no install, finishes in seconds
 node server.js    # boots on :8787

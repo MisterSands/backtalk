@@ -1,0 +1,21 @@
+# Render blueprint — powers the "Deploy to Render" button in the README.
+# Zero dependencies: the "build" is just the unit tests (offline, seconds).
+# Node version comes from package.json "engines" (>= 20).
+services:
+  - type: web
+    name: backtalk
+    runtime: node
+    plan: free
+    buildCommand: npm test
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    envVars:
+      # Render injects PORT; server.js reads it. Everything below is yours.
+      - key: QUO_API_KEY
+        sync: false # prompted at deploy time, never stored in this file
+      - key: QUO_WEBHOOK_SECRET
+        sync: false # paste the signing key Quo shows when you create the webhook
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        sync: false # e.g. anthropic/claude-haiku-4.5 (OpenRouter id)

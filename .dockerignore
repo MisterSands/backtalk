@@ -1,0 +1,16 @@
+# Never bake secrets or local state into image layers.
+.env
+*.local
+*.log
+.idempotency.json
+
+# No history, no VCS metadata in the image.
+.git
+.gitignore
+
+# Zero-dependency project — node_modules should never exist, but belt and braces.
+node_modules
+
+# Build context noise.
+Dockerfile
+.dockerignore

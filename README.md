@@ -6,7 +6,7 @@ A hang-up hook for Quo (formerly OpenPhone): call ends → your LLM reads the tr
 
 `License: MIT` · `Node >= 20` · `Zero runtime dependencies` · `Zero dev dependencies`
 
-<!-- demo GIF placeholder: docs/demo.gif -->
+![How BackTalk works: call ends, the Quo webhook fires, the webhook is caught, an LLM reads the transcript and finds the to-dos, and tasks are created on the same Quo contact — closing the loop](docs/backtalk_steps_diagram.jpg)
 
 ---
 
@@ -65,7 +65,7 @@ The design is webhook-first: subscribe to `call.transcript.completed` and the ev
 Requires Node >= 20. There is nothing to install — zero dependencies.
 
 ```bash
-git clone <this-repo> backtalk
+git clone https://github.com/MisterSands/backtalk.git
 cd backtalk
 cp .env.example .env     # fill in QUO_API_KEY, QUO_WEBHOOK_SECRET, LLM_API_KEY, LLM_MODEL
 node server.js           # listens on :8787
@@ -111,6 +111,23 @@ Import [`blueprints/make-backtalk.blueprint.json`](blueprints/make-backtalk.blue
 Zaps aren't cleanly exportable, so [`docs/zapier.md`](docs/zapier.md) is a step-by-step build with sample payloads at every step.
 
 ## Deploy
+
+### Browser-only setup (no terminal required)
+
+The repo ships a [`render.yaml`](render.yaml) blueprint, so you can stand the whole thing up from a browser:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/MisterSands/backtalk)
+
+1. **Click the button** (free Render account works). Render reads `render.yaml` and prompts you for the four required values: `QUO_API_KEY`, `QUO_WEBHOOK_SECRET`, `LLM_API_KEY`, `LLM_MODEL`.
+   - Don't have the webhook secret yet? Enter a placeholder for `QUO_WEBHOOK_SECRET` — you'll get the real one in step 3.
+2. **Deploy.** When it's live, copy your service URL: `https://<your-app>.onrender.com`.
+3. **In the Quo dashboard** → webhooks → create a webhook pointing at `https://<your-app>.onrender.com/webhook`, subscribed to **`call.transcript.completed`** only. Quo shows you the signing key — copy it.
+4. **Back in Render** → your service → Environment → set `QUO_WEBHOOK_SECRET` to that signing key. The service restarts automatically.
+5. **Verify:** open `https://<your-app>.onrender.com/healthz` — you should see `{"ok":true}`. Make a test call; when the transcript completes, a task appears on the call's contact.
+
+Caveats for the free tier: the instance spins down when idle, so the first webhook after a quiet period waits out a cold start (Quo retries deliveries, so nothing is lost — it's just slower). The in-memory dedupe also resets on every spin-down; the `ref:` marker check still prevents duplicate tasks.
+
+### Other hosts
 
 Any long-running Node 20+ host works. Two well-documented options:
 
