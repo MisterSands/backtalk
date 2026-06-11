@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * quo-hangup-hook — webhook server.
+ * TalkBack — webhook server.
  *
  * Four stages, nothing else:
  *   [webhook receive + verify] → [transcript acquire] → [LLM promise extraction] → [Quo task creation]
@@ -488,7 +488,7 @@ async function handleWebhook(req, res) {
   // Verify FIRST, on the raw bytes — never process unverified payloads.
   if (cfg.allowUnsigned) {
     console.warn(
-      "\x1b[31m[quo-hangup-hook] ALLOW_UNSIGNED=1 — signature verification is DISABLED. Local development only.\x1b[0m",
+      "\x1b[31m[TalkBack] ALLOW_UNSIGNED=1 — signature verification is DISABLED. Local development only.\x1b[0m",
     );
   } else {
     const v = verifyWebhook(raw, req.headers, cfg.webhookSecrets, { skewSeconds: cfg.skewSeconds });
@@ -570,7 +570,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(cfg.port, () => {
-  log("info", "quo-hangup-hook listening", {
+  log("info", "TalkBack listening", {
     port: cfg.port,
     dryRun: cfg.dryRun,
     allowUnsigned: cfg.allowUnsigned,

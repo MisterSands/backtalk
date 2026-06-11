@@ -1,6 +1,6 @@
 # Security
 
-quo-hangup-hook sits on a sensitive seam: it accepts unauthenticated-by-default HTTP from the internet, feeds the words of *arbitrary external callers* into an LLM, and turns the result into write actions on your phone system. This document describes the threat model and the defenses, in enough detail that you can audit them.
+TalkBack sits on a sensitive seam: it accepts unauthenticated-by-default HTTP from the internet, feeds the words of *arbitrary external callers* into an LLM, and turns the result into write actions on your phone system. This document describes the threat model and the defenses, in enough detail that you can audit them.
 
 ## Doctrine: transcripts are untrusted input
 
@@ -86,6 +86,6 @@ The `/replay` endpoint (manual re-runs) is disabled unless `REPLAY_TOKEN` is set
 
 Please report suspected vulnerabilities privately — do not open a public issue for anything exploitable.
 
-- Contact: `security@example.com` <!-- MAINTAINER: replace with a monitored address before publishing -->
+- Contact: `<your-security-contact@example.com>` <!-- MAINTAINER: replace with a monitored address before publishing -->
 - Include: affected file/version, reproduction steps, and impact.
 - You'll get an acknowledgment within 72 hours and a fix-or-status response within 14 days. Good-faith research against your **own** Quo workspace is welcome; never test against accounts you don't control.

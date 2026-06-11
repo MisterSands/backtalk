@@ -138,8 +138,8 @@ test("happy path: 2 agent promises survive and map to spec-shaped task payloads"
     assert.ok(p.description.includes("Spoken due:"));
     assert.ok(!("assignedTo" in p), "unset optionals are omitted, not null");
   }
-  assert.ok(payloads[0].description.includes(`Source: quo-hangup-hook ref:${CALL_ID}/1`));
-  assert.ok(payloads[1].description.includes(`Source: quo-hangup-hook ref:${CALL_ID}/2`));
+  assert.ok(payloads[0].description.includes(`Source: talkback ref:${CALL_ID}/1`));
+  assert.ok(payloads[1].description.includes(`Source: talkback ref:${CALL_ID}/2`));
   assert.equal(payloads[0].dueDate, agentPromise1.due_iso);
 
   const assigned = buildTaskPayload(result.commitments[0], { callId: CALL_ID, index: 1, assignedTo: "USfictionalalex01" });

@@ -1,4 +1,4 @@
-# quo-hangup-hook — zero runtime dependencies, so there is no install step.
+# TalkBack — zero runtime dependencies, so there is no install step.
 # The image is the Node 20 Alpine base plus this repo's source. That's it.
 
 FROM node:20-alpine

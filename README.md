@@ -1,6 +1,6 @@
-# quo-hangup-hook
+# TalkBack
 
-**Every call ends with promises. quo-hangup-hook files them as Quo tasks before anyone forgets.**
+**Every call ends with promises. TalkBack files them as Quo tasks before anyone forgets.**
 
 A hang-up hook for Quo (formerly OpenPhone): call ends → your LLM reads the transcript → commitments become native tasks linked to the call.
 
@@ -14,7 +14,7 @@ A hang-up hook for Quo (formerly OpenPhone): call ends → your LLM reads the tr
 
 It's 4:50 on a Friday at Acme Plumbing. Alex Agent is wrapping up a call with Casey Caller: *"I'll send you the updated fee schedule tomorrow morning."* The line goes dead. The phone rings again. By Monday, that promise exists only in Casey's head — and Casey is the one who notices it was broken.
 
-quo-hangup-hook closes that gap. The moment the call's transcript is ready, a webhook fires, your LLM reads the dialogue, and every explicit spoken commitment becomes a **native Quo Task attached to that call** — before Alex has even picked up the next one. From the example above: a task titled **"Send the updated fee schedule"**, due tomorrow morning, with Alex's exact words quoted in the description. Nobody typed anything.
+TalkBack closes that gap. The moment the call's transcript is ready, a webhook fires, your LLM reads the dialogue, and every explicit spoken commitment becomes a **native Quo Task attached to that call** — before Alex has even picked up the next one. From the example above: a task titled **"Send the updated fee schedule"**, due tomorrow morning, with Alex's exact words quoted in the description. Nobody typed anything.
 
 By default it captures **your staff's** promises only — that's where follow-through breaks. Set `INCLUDE_CALLER_COMMITMENTS=1` and it also files what the caller promised ("I'll send the signed contract by Friday"), so you know when to nudge. It is bring-your-own-LLM: OpenRouter, OpenAI, Anthropic, Groq — or fully local Ollama / LM Studio, so call transcripts can stay on your own hardware end to end.
 
@@ -31,7 +31,7 @@ Four stages, nothing else. Stateless pass-through: no transcript persisted, no P
                         |  (payload carries the full dialogue — no polling)
                         v
         +-----------------------------------------+
-        |             quo-hangup-hook             |
+        |                TalkBack                 |
         |                                         |
         |  1  receive + verify                    |
         |     HMAC signature, replay window,      |
@@ -65,8 +65,8 @@ The design is webhook-first: subscribe to `call.transcript.completed` and the ev
 Requires Node >= 20. There is nothing to install — zero dependencies.
 
 ```bash
-git clone <this-repo> quo-hangup-hook
-cd quo-hangup-hook
+git clone <this-repo> talkback-quo
+cd talkback-quo
 cp .env.example .env     # fill in QUO_API_KEY, QUO_WEBHOOK_SECRET, LLM_API_KEY, LLM_MODEL
 node server.js           # listens on :8787
 ```
@@ -92,19 +92,19 @@ Then go live:
 ### Path 2 — Docker
 
 ```bash
-docker build -t quo-hangup-hook .
-docker run --env-file .env -p 8787:8787 quo-hangup-hook
+docker build -t talkback-quo .
+docker run --env-file .env -p 8787:8787 talkback-quo
 ```
 
 Same env contract, same `/webhook` endpoint. `GET /healthz` is your liveness probe.
 
 ### Path 3 — n8n
 
-Import [`blueprints/n8n-hangup-hook.json`](blueprints/n8n-hangup-hook.json) — generic Webhook + Code + HTTP Request nodes only, no community-node dependency. Set the env vars listed in [`blueprints/README.md`](blueprints/README.md), enable **Raw Body** on the Webhook node, and point your Quo webhook at the n8n URL.
+Import [`blueprints/n8n-talkback.json`](blueprints/n8n-talkback.json) — generic Webhook + Code + HTTP Request nodes only, no community-node dependency. Set the env vars listed in [`blueprints/README.md`](blueprints/README.md), enable **Raw Body** on the Webhook node, and point your Quo webhook at the n8n URL.
 
 ### Path 4 — Make
 
-Import [`blueprints/make-hangup-hook.blueprint.json`](blueprints/make-hangup-hook.blueprint.json). It uses Make's native OpenPhone transcript trigger (the connection handles webhook registration for you) plus HTTP modules for the LLM and Tasks calls. Caveats in [`blueprints/README.md`](blueprints/README.md).
+Import [`blueprints/make-talkback.blueprint.json`](blueprints/make-talkback.blueprint.json). It uses Make's native OpenPhone transcript trigger (the connection handles webhook registration for you) plus HTTP modules for the LLM and Tasks calls. Caveats in [`blueprints/README.md`](blueprints/README.md).
 
 ### Path 5 — Zapier
 
@@ -166,8 +166,8 @@ Signatures are verified by default (both Quo signing schemes, timing-safe, fail 
 
 | Path | File | One-line caveat |
 |---|---|---|
-| n8n | `blueprints/n8n-hangup-hook.json` | Full validation layer in Code nodes; needs Raw Body on, and `crypto` allowed as a builtin. |
-| Make | `blueprints/make-hangup-hook.blueprint.json` | Native trigger handles webhook auth, but the validation layer is weaker than the Node server's — see blueprints/README.md. |
+| n8n | `blueprints/n8n-talkback.json` | Full validation layer in Code nodes; needs Raw Body on, and `crypto` allowed as a builtin. |
+| Make | `blueprints/make-talkback.blueprint.json` | Native trigger handles webhook auth, but the validation layer is weaker than the Node server's — see blueprints/README.md. |
 | Zapier | `docs/zapier.md` | Step-by-step build doc (zaps aren't exportable). |
 
 ## What this does NOT do
@@ -182,8 +182,8 @@ Signatures are verified by default (both Quo signing schemes, timing-safe, fail 
 
 ## Beyond the hook
 
-Built by a solo law-firm operator who runs his firm on this stack. The hosted version, vertical prompt packs (legal intake, contracting, real estate), and multi-system routing with daily did-it-actually-happen reconciliation are the kind of thing I build for clients — get in touch. <!-- MAINTAINER: add contact link before publishing -->
+Built and maintained by `<your name — your consulting link>`. The hosted version, vertical prompt packs (legal intake, contracting, real estate), and multi-system routing with daily did-it-actually-happen reconciliation are the kind of thing I build for clients — reach out at `<your-email>`. <!-- MAINTAINER: replace the placeholders above with your real name, contact, and consulting link before publishing -->
 
 ## License
 
-[MIT](LICENSE) — © quo-hangup-hook contributors.
+[MIT](LICENSE) — © TalkBack contributors.

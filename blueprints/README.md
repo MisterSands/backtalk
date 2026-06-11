@@ -1,6 +1,6 @@
 # Blueprints — n8n, Make, Zapier
 
-Importable versions of the quo-hangup-hook pipeline for the three big automation platforms. All three run the same four stages as the Node server:
+Importable versions of the TalkBack pipeline for the three big automation platforms. All three run the same four stages as the Node server:
 
 ```
 [webhook receive + verify] → [transcript acquire] → [LLM promise extraction] → [Quo Task creation]
@@ -24,15 +24,15 @@ All example data in these files is fictional: names like Alex Agent and Casey Ca
 
 ---
 
-## n8n — `n8n-hangup-hook.json`
+## n8n — `n8n-talkback.json`
 
 Generic nodes only (Webhook, Code, IF, HTTP Request, Respond to Webhook) — no community nodes to install.
 
 ### Import
 
-1. n8n → **Workflows → Import from File** → pick `n8n-hangup-hook.json`.
+1. n8n → **Workflows → Import from File** → pick `n8n-talkback.json`.
 2. Set the environment variables below on the n8n **host** (container env, not inside n8n).
-3. **Activate** the workflow and copy the production webhook URL (`…/webhook/quo-hangup-hook`).
+3. **Activate** the workflow and copy the production webhook URL (`…/webhook/talkback`).
 4. In the **Quo dashboard**, create a webhook pointing at that URL, subscribed to **`call.transcript.completed` only** — its payload carries the full dialogue, so the workflow never has to call back for the transcript.
 5. Paste the webhook's signing key into `QUO_WEBHOOK_SECRET`. If you register more than one webhook, comma-separate the secrets.
 
@@ -69,13 +69,13 @@ Generic nodes only (Webhook, Code, IF, HTTP Request, Respond to Webhook) — no 
 
 ---
 
-## Make — `make-hangup-hook.blueprint.json`
+## Make — `make-talkback.blueprint.json`
 
 Uses Make's **native OpenPhone "Watch New Call Transcripts" instant trigger** — the OpenPhone connection registers and authenticates the webhook for you, which sidesteps manual HMAC verification (Make has no code module to do it). The LLM and Quo Tasks legs are raw HTTP modules, so you can point the LLM at any OpenAI-compatible endpoint.
 
 ### Import
 
-1. Make → **Scenarios → Create a new scenario → ⋯ → Import Blueprint** → pick `make-hangup-hook.blueprint.json`.
+1. Make → **Scenarios → Create a new scenario → ⋯ → Import Blueprint** → pick `make-talkback.blueprint.json`.
 2. Open the trigger module and attach/create your **OpenPhone connection + webhook** (the import cannot carry a webhook across accounts).
 3. Open **"LLM Extract (OpenAI-compatible)"** and replace `<<PASTE_YOUR_LLM_API_KEY>>` in the Authorization header. Adjust the URL and the `"model"` field in the body if you are not using the default endpoint/model.
 4. Open **both** "Create Quo Task" modules (with / without due date) and replace `<<PASTE_YOUR_QUO_API_KEY>>`. That header is the **raw key — no `Bearer` prefix**.

@@ -5,8 +5,8 @@ Thanks for helping make hang-ups less forgetful. The project is intentionally sm
 ## Getting started
 
 ```bash
-git clone <this-repo> quo-hangup-hook
-cd quo-hangup-hook
+git clone <this-repo> talkback-quo
+cd talkback-quo
 npm test          # node:test — no network, no install, finishes in seconds
 node server.js    # boots on :8787
 ```
