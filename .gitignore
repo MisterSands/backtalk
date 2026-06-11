@@ -1,0 +1,14 @@
+# dependencies (there should never be any — zero-dependency project)
+node_modules/
+
+# secrets — .env is the only secret source and it never gets committed
+.env
+
+# local-only files
+*.local
+
+# idempotency store (call-id state, written at runtime)
+.idempotency.json
+
+# logs
+*.log
