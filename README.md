@@ -6,7 +6,7 @@ Every call ends with a promise. BackTalk turns it into a Quo (formerly OpenPhone
 
 `License: MIT` · No-code paths for Zapier & Make · Self-host option for developers
 
-![How BackTalk works: call ends, the Quo webhook fires, the webhook is caught, an AI reads the transcript and finds the to-dos, and tasks are created on the same Quo contact — closing the loop](docs/backtalk_steps_diagram.jpg)
+![How BackTalk works: call ends, the Quo webhook fires, the webhook is caught, an AI reads the transcript and finds the to-dos, and tasks are created on the same Quo contact — closing the loop](docs/backtalk_steps_diagram.svg)
 
 ---
 

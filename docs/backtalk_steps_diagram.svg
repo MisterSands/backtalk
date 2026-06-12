@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 450" font-family="'Segoe UI', system-ui, -apple-system, Helvetica, Arial, sans-serif" role="img" aria-label="How BackTalk works: a call ends, the Quo webhook fires, it is caught in n8n or Make, an LLM reads the transcript and finds the to-dos, and tasks are created on the same Quo contact, closing the loop.">
+  <defs>
+    <radialGradient id="amb" cx="50%" cy="0%" r="75%">
+      <stop offset="0%" stop-color="#caff1f" stop-opacity="0.10"/>
+      <stop offset="55%" stop-color="#caff1f" stop-opacity="0.02"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1600" height="450" fill="#060606"/>
+  <rect width="1600" height="300" fill="url(#amb)"/>
+
+  <!-- header -->
+  <text x="800" y="50" text-anchor="middle" fill="#d7e62f" font-size="25" font-weight="800" letter-spacing="3">QUO</text>
+  <text x="800" y="104" text-anchor="middle" fill="#ffffff" font-size="48" font-weight="800" letter-spacing="-0.5">BackTalk</text>
+  <text x="800" y="146" text-anchor="middle" fill="#9aa1a9" font-size="18">Every phone call quietly turns into tasks on the right Quo contact</text>
+
+  <!-- flow boxes -->
+  <!-- b0 Call ends -->
+  <g>
+    <rect x="60" y="212" width="223" height="120" rx="16" fill="#0c0c08" stroke="#33331f" stroke-width="1.5"/>
+    <text x="171.5" y="256" text-anchor="middle" fill="#d7e62f" font-size="12.5" font-weight="800" letter-spacing="2.5">QUO</text>
+    <text x="171.5" y="293" text-anchor="middle" fill="#ffffff" font-size="23" font-weight="700">Call ends</text>
+  </g>
+  <!-- b1 Webhook fires -->
+  <g>
+    <rect x="311" y="212" width="223" height="120" rx="16" fill="#0c0c08" stroke="#33331f" stroke-width="1.5"/>
+    <text x="422.5" y="256" text-anchor="middle" fill="#d7e62f" font-size="12.5" font-weight="800" letter-spacing="2.5">QUO</text>
+    <text x="422.5" y="293" text-anchor="middle" fill="#ffffff" font-size="23" font-weight="700">Webhook fires</text>
+  </g>
+  <!-- b2 Webhook caught (n8n/Make) -->
+  <g>
+    <rect x="562" y="212" width="223" height="120" rx="16" fill="#0e1d28" stroke="#3f86b8" stroke-width="1.5"/>
+    <text x="673.5" y="256" text-anchor="middle" fill="#74b6e6" font-size="12.5" font-weight="800" letter-spacing="2.5">N8N / MAKE</text>
+    <text x="673.5" y="293" text-anchor="middle" fill="#ffffff" font-size="23" font-weight="700">Webhook caught</text>
+  </g>
+  <!-- b3 Transcript read (LLM) -->
+  <g>
+    <rect x="813" y="212" width="223" height="120" rx="16" fill="#271310" stroke="#b9542a" stroke-width="1.5"/>
+    <text x="924.5" y="256" text-anchor="middle" fill="#e2885a" font-size="12.5" font-weight="800" letter-spacing="2.5">LLM</text>
+    <text x="924.5" y="293" text-anchor="middle" fill="#ffffff" font-size="23" font-weight="700">Transcript read</text>
+  </g>
+  <!-- b4 To-dos found (LLM) -->
+  <g>
+    <rect x="1064" y="212" width="223" height="120" rx="16" fill="#271310" stroke="#b9542a" stroke-width="1.5"/>
+    <text x="1175.5" y="256" text-anchor="middle" fill="#e2885a" font-size="12.5" font-weight="800" letter-spacing="2.5">LLM</text>
+    <text x="1175.5" y="293" text-anchor="middle" fill="#ffffff" font-size="23" font-weight="700">To-dos found</text>
+  </g>
+  <!-- b5 Tasks created (Quo Tasks API) -->
+  <g>
+    <rect x="1315" y="212" width="223" height="120" rx="16" fill="#0c0c08" stroke="#5a5a2a" stroke-width="1.5"/>
+    <text x="1426.5" y="256" text-anchor="middle" fill="#d7e62f" font-size="12.5" font-weight="800" letter-spacing="2">QUO · TASKS API</text>
+    <text x="1426.5" y="293" text-anchor="middle" fill="#ffffff" font-size="23" font-weight="700">Tasks created</text>
+  </g>
+
+  <!-- forward arrows -->
+  <g fill="#d9772b" stroke="#d9772b" stroke-width="2">
+    <line x1="288" y1="272" x2="302" y2="272"/><polygon points="302,267 311,272 302,277" stroke="none"/>
+    <line x1="539" y1="272" x2="553" y2="272"/><polygon points="553,267 562,272 553,277" stroke="none"/>
+    <line x1="790" y1="272" x2="804" y2="272"/><polygon points="804,267 813,272 804,277" stroke="none"/>
+    <line x1="1041" y1="272" x2="1055" y2="272"/><polygon points="1055,267 1064,272 1055,277" stroke="none"/>
+    <line x1="1292" y1="272" x2="1306" y2="272"/><polygon points="1306,267 1315,272 1306,277" stroke="none"/>
+  </g>
+
+  <!-- return loop -->
+  <path d="M1426.5 332 V404 H171.5 V344" fill="none" stroke="#c9a13a" stroke-width="2"/>
+  <polygon points="166.5,346 171.5,335 176.5,346" fill="#c9a13a"/>
+  <rect x="600" y="388" width="400" height="24" fill="#060606"/>
+  <text x="800" y="405" text-anchor="middle" fill="#c9a13a" font-size="15">Tasks land on the same Quo contact — closing the loop</text>
+
+  <!-- footer -->
+  <text x="800" y="438" text-anchor="middle" fill="#62676e" font-size="13" font-weight="600" letter-spacing="3">LOCAL OR API LLM   ·   n8n OR MAKE   ·   QUO TASKS API</text>
+</svg>
