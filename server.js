@@ -315,6 +315,15 @@ async function createTasks(commitments, { callId, callerE164 }) {
       }
     }
 
+    // Due-date rejection → retry once without dueDate. Seen live: Quo returns
+    // 400 "due date cannot be in the past" when processing lags the spoken date
+    // (replay, delayed delivery). The description still carries "Spoken due:".
+    if (!r.ok && r.status === 400 && /due ?date/i.test(String(r.error)) && payload.dueDate) {
+      const noDue = { ...payload };
+      delete noDue.dueDate;
+      r = await quo.createTask(noDue);
+    }
+
     if (r.ok) {
       created += 1;
       continue;

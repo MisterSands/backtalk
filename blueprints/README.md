@@ -26,52 +26,65 @@ All example data in these files is fictional: names like Alex Agent and Casey Ca
 
 ## n8n — `n8n-backtalk.json`
 
-Generic nodes only (Webhook, Code, IF, HTTP Request, Respond to Webhook) — no community nodes to install.
+Generic nodes only (Webhook, Set, Code, IF, HTTP Request, Respond to Webhook) — no community nodes to install.
+
+☁️ **n8n Cloud works out of the box via the Config node; host env vars are the self-host alternative.** Nothing in the workflow *requires* access to host environment variables.
 
 ### Import
 
 1. n8n → **Workflows → Import from File** → pick `n8n-backtalk.json`.
-2. Set the environment variables below on the n8n **host** (container env, not inside n8n).
-3. **Activate** the workflow and copy the production webhook URL (`…/webhook/backtalk`).
-4. In the **Quo dashboard**, create a webhook pointing at that URL, subscribed to **`call.transcript.completed` only** — its payload carries the full dialogue, so the workflow never has to call back for the transcript.
-5. Paste the webhook's signing key into `QUO_WEBHOOK_SECRET`. If you register more than one webhook, comma-separate the secrets.
+2. Create the two **Header Auth credentials** the HTTP nodes reference — after import they show as *credential not found*:
+   - **"Quo API (raw key)"** → Name: `Authorization`, Value: your Quo API key, **raw — no `Bearer` prefix** (used by "Create Quo Task").
+   - **"LLM API (Bearer)"** → Name: `Authorization`, Value: `Bearer <your LLM key>` — type the literal word `Bearer` plus a space (any non-empty key for Ollama / LM Studio; used by "LLM Extract").
+3. Open the **Config** node and review the settings (table below). At minimum check `llmModel` and `timezone`.
+4. **Activate** the workflow and copy the production webhook URL (`…/webhook/backtalk`).
+5. In the **Quo dashboard**, create a webhook pointing at that URL, subscribed to **`call.transcript.completed` only** — its payload carries the full dialogue, so the workflow never has to call back for the transcript.
+6. Paste the webhook's signing key into the Config node's `webhookSecret` field. If you register more than one webhook, comma-separate the secrets. (Self-host alternative: leave the field empty and set the `QUO_WEBHOOK_SECRET` env var on the n8n host.)
 
-### Environment variables
+### Secrets — where each one lives
 
-| Var | Required | Default | Meaning |
+| Secret | Where it goes | Notes |
+|---|---|---|
+| Quo API key | **Credential** "Quo API (raw key)" | Sent **raw** in the `Authorization` header — no `Bearer` prefix. |
+| LLM API key | **Credential** "LLM API (Bearer)" | Credential value is `Bearer <key>` — the prefix is typed into the credential. |
+| Quo webhook signing secret | **Config node** `webhookSecret` (n8n Cloud) or `QUO_WEBHOOK_SECRET` host env var (self-host) | Code nodes cannot read n8n credentials, so this one secret cannot live in a credential. If you put it in the Config node, the workflow JSON contains it — keep the workflow private and strip the field before sharing an export. `whsec_…` values route to the beta scheme automatically. |
+
+### Settings (the Config node)
+
+All non-secret settings live in the **Config** Set node, right after the webhook — edit them there. On **self-host**, the env var in the right-hand column (set on the n8n host) overrides the Config value when present, so the old env-var contract still works. On **n8n Cloud** the env override simply never fires — env reads are wrapped in a safe fallback, so a blocked `$env` cannot break the workflow.
+
+| Config field | Default | Meaning | Self-host env override |
 |---|---|---|---|
-| `QUO_API_KEY` | yes | — | Quo API key. Sent **raw** in the `Authorization` header — no `Bearer` prefix. |
-| `QUO_WEBHOOK_SECRET` | yes | — | Signing secret(s), comma-separated. `whsec_…` values route to the beta scheme automatically. |
-| `LLM_API_KEY` | yes | — | Key for your OpenAI-compatible provider (any non-empty string for Ollama / LM Studio). |
-| `LLM_MODEL` | yes | — | e.g. `anthropic/claude-haiku-4.5` — any chat model that can follow a JSON schema works. |
-| `LLM_BASE_URL` | no | `https://openrouter.ai/api/v1` | Ollama: `http://localhost:11434/v1`. |
-| `MIN_CALL_SECONDS` | no | `30` | Skip shorter calls before any LLM spend. |
-| `MAX_TASKS_PER_CALL` | no | `8` | Hard ceiling 8 — may be lowered, never raised. |
-| `MAX_TRANSCRIPT_CHARS` | no | `24000` | 60% head + 40% tail cap with a `[... middle trimmed ...]` marker. |
-| `MIN_CONFIDENCE` | no | `medium` | Drop commitments below this (`low`/`medium`/`high`). |
-| `INCLUDE_CALLER_COMMITMENTS` | no | `0` | `1` → also file the caller's commitments. |
-| `OWNED_NUMBERS` | no | unset | `+15555550100=Alex Agent,+15555550101=Bailey Agent` — these identifiers are forced to AGENT (forwarded-line edge case). |
-| `QUO_DEFAULT_ASSIGNEE` | no | unset | `US…` user id stamped on every created task. |
-| `TIMEZONE` | no | `UTC` | IANA timezone fed to the prompt for resolving "tomorrow" / "Tuesday". |
-| `SIGNATURE_SKEW_SECONDS` | no | `300` | Replay window for signature timestamps. |
-| `ALLOW_UNSIGNED` | no | `0` | `1` skips signature checks. **Local testing only.** |
+| `minCallSeconds` | `30` | Skip shorter calls before any LLM spend. | `MIN_CALL_SECONDS` |
+| `maxTasksPerCall` | `8` | Hard ceiling 8 — may be lowered, never raised. | `MAX_TASKS_PER_CALL` |
+| `maxTranscriptChars` | `24000` | 60% head + 40% tail cap with a `[... middle trimmed ...]` marker. | `MAX_TRANSCRIPT_CHARS` |
+| `minConfidence` | `medium` | Drop commitments below this (`low`/`medium`/`high`). | `MIN_CONFIDENCE` |
+| `includeCallerCommitments` | `false` | `true` → also file the caller's commitments. | `INCLUDE_CALLER_COMMITMENTS` (`1`/`0`) |
+| `ownedNumbers` | empty | `+15555550100=Alex Agent,+15555550101=Bailey Agent` — these identifiers are forced to AGENT (forwarded-line edge case). | `OWNED_NUMBERS` |
+| `timezone` | `America/New_York` | IANA timezone fed to the prompt for resolving "tomorrow" / "Tuesday". | — (Config only) |
+| `signatureSkewSeconds` | `300` | Replay window for signature timestamps. | `SIGNATURE_SKEW_SECONDS` |
+| `allowUnsigned` | `false` | `true` skips signature checks. **Local testing only.** | `ALLOW_UNSIGNED` (`1`/`0`) |
+| `defaultAssignee` | empty | `US…` user id stamped on every created task. | `QUO_DEFAULT_ASSIGNEE` |
+| `llmBaseUrl` | `https://openrouter.ai/api/v1` | Ollama: `http://localhost:11434/v1`. | — (Config only) |
+| `llmModel` | `anthropic/claude-haiku-4.5` | Any chat model that can follow a JSON schema works. | — (Config only) |
+| `webhookSecret` | empty | **Secret** — see the secrets table above. | `QUO_WEBHOOK_SECRET` |
 
 ### Platform notes (read these — they bite)
 
-- **The `Authorization` header to `api.openphone.com` is the raw key — no `Bearer` prefix.** The "Create Quo Task" node is already wired that way; don't "fix" it. (The LLM node *does* use `Bearer` — that one is correct too.)
-- **Keep "Raw Body" enabled on the Webhook node.** Signature verification needs the exact request bytes.
-- The Code nodes use `require('crypto')`. If your instance restricts builtins, set `NODE_FUNCTION_ALLOW_BUILTIN=crypto`. If `$env` reads are blocked, make sure `N8N_BLOCK_ENV_ACCESS_IN_NODE` is not `true`.
+- **The `Authorization` header to `api.openphone.com` is the raw key — no `Bearer` prefix.** The "Quo API (raw key)" credential is wired that way; don't "fix" it. (The LLM credential *does* carry `Bearer` in its value — that one is correct too.)
+- **Keep "Raw Body" enabled on the Webhook node.** Signature verification needs the exact request bytes. The Config node passes binary through ("Strip Binary Data" is off) — leave that alone too.
+- **Self-host only:** the Code nodes use `require('crypto')` — if your instance restricts builtins, set `NODE_FUNCTION_ALLOW_BUILTIN=crypto`. n8n Cloud already allows `crypto`, and `$env` reads are wrapped in a try/catch fallback, so a blocked `$env` (n8n Cloud, or `N8N_BLOCK_ENV_ACCESS_IN_NODE=true`) just means the Config node values are used.
 - **Dedupe uses workflow static data**, which only persists for *active* (production) executions and lives in this one n8n instance. Manual test runs always start with an empty seen-list.
 - If a call yields **zero surviving commitments**, the run ends before the "Respond OK" node; n8n then sends its default webhook response (still a 2xx, so the provider will not retry). Harmless, but don't be surprised by the editor warning.
 - A failed signature check **throws**, which returns a 5xx to the provider. That is intentional: a forged delivery dies, a genuinely misconfigured secret shows up loudly in your executions list.
 - One failed task-create does not kill the batch ("Create Quo Task" continues on error). Check the execution log for per-item failures.
-- **Test before going live:** temporarily set `ALLOW_UNSIGNED=1`, then POST the repo's `fixtures/sample-webhook.json` at the test webhook URL and watch the execution. Set it back to `0` after.
+- **Test before going live:** temporarily set `allowUnsigned` to `true` in the Config node (or `ALLOW_UNSIGNED=1` on self-host), then POST the repo's `fixtures/sample-webhook.json` at the test webhook URL and watch the execution. Set it back to `false` after.
 
 ---
 
 ## Make — `make-backtalk.blueprint.json`
 
-Uses Make's **native OpenPhone "Watch New Call Transcripts" instant trigger** — the OpenPhone connection registers and authenticates the webhook for you, which sidesteps manual HMAC verification (Make has no code module to do it). The LLM and Quo Tasks legs are raw HTTP modules, so you can point the LLM at any OpenAI-compatible endpoint.
+Uses Make's **native OpenPhone "Watch New Call Transcripts" instant trigger** — the OpenPhone connection registers and authenticates the webhook for you, which sidesteps manual HMAC verification (Make has no code module to do it). The LLM and Quo Tasks legs are raw HTTP modules, so you can point the LLM at any OpenAI-compatible endpoint. Full setup guide: [`../docs/make.md`](../docs/make.md).
 
 ### Import
 
@@ -117,11 +130,11 @@ Zaps are not cleanly exportable, so Zapier gets a step-by-step build guide inste
 
 | Concept | Node server (`.env`) | n8n | Make | Zapier |
 |---|---|---|---|---|
-| Quo API key | `QUO_API_KEY` | `QUO_API_KEY` env | Authorization header in both task modules | Authorization header in the task webhook step |
-| Webhook authenticity | `QUO_WEBHOOK_SECRET` | `QUO_WEBHOOK_SECRET` env | OpenPhone connection (managed) | OpenPhone app trigger (managed) |
-| LLM endpoint | `LLM_BASE_URL` | `LLM_BASE_URL` env | URL in "LLM Extract" module | URL in the LLM webhook step |
-| LLM key | `LLM_API_KEY` | `LLM_API_KEY` env | Bearer header in "LLM Extract" | Bearer header in the LLM step |
-| Model id | `LLM_MODEL` | `LLM_MODEL` env | `"model"` in the request body | `model` in the Code step |
-| Timezone | `TIMEZONE` | `TIMEZONE` env | edit the user-message line | `timezone` input on the Code step |
+| Quo API key | `QUO_API_KEY` | "Quo API (raw key)" credential | Authorization header in both task modules | Authorization header in the task webhook step |
+| Webhook authenticity | `QUO_WEBHOOK_SECRET` | Config node `webhookSecret` (or `QUO_WEBHOOK_SECRET` env, self-host) | OpenPhone connection (managed) | OpenPhone app trigger (managed) |
+| LLM endpoint | `LLM_BASE_URL` | Config node `llmBaseUrl` | URL in "LLM Extract" module | URL in the LLM webhook step |
+| LLM key | `LLM_API_KEY` | "LLM API (Bearer)" credential | Bearer header in "LLM Extract" | Bearer header in the LLM step |
+| Model id | `LLM_MODEL` | Config node `llmModel` | `"model"` in the request body | `model` in the Code step |
+| Timezone | `TIMEZONE` | Config node `timezone` | edit the user-message line | `timezone` input on the Code step |
 
 One spirit-level rule everywhere: **the only write this tool ever performs against your Quo account is `POST /v1/tasks`.** It never sends messages, never touches contacts, and never registers webhooks on your behalf (you — or the platform connection you authorize — create those).

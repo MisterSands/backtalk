@@ -25,6 +25,10 @@ const baseCtx = {
   includeCaller: false,
   maxTasks: 8,
   minConfidence: "medium",
+  // Pin "processing time" just after the fixture call so the suite is
+  // deterministic forever (fixture due dates would otherwise drift into the
+  // past and trip the past-due nulling rule).
+  nowIso: "2026-06-11T14:30:00.000Z",
 };
 
 const wrap = (commitments) =>
@@ -277,6 +281,17 @@ test("unparseable due_iso is nulled", () => {
   const r = parseAndValidate(wrap([garbage]), baseCtx);
   assert.equal(r.commitments.length, 1);
   assert.equal(r.commitments[0].due_iso, null);
+});
+
+test("due date already past at PROCESSING time is nulled (replay/delayed delivery)", () => {
+  // Found live: Quo rejects past due dates with 400. A date valid when spoken
+  // must be nulled if processing happens after it has passed.
+  const r = parseAndValidate(wrap([agentPromise1]), { ...baseCtx, nowIso: "2026-06-13T00:00:00.000Z" });
+  assert.equal(r.commitments.length, 1, "item survives — only the date dies");
+  assert.equal(r.commitments[0].due_iso, null);
+  assert.equal(r.audit.filter((a) => a.reason === "due_in_past_nulled").length, 1);
+  const p = buildTaskPayload(r.commitments[0], { callId: CALL_ID, index: 1 });
+  assert.ok(!("dueDate" in p), "payload omits dueDate entirely");
 });
 
 test("title and detail are truncated to 80/200 chars", () => {

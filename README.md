@@ -28,13 +28,14 @@ Pick the platform you already use. Each one copies the BackTalk workflow into yo
 
 **One click to copy, then two connections.**
 
-> **Use this Zap → `<<PASTE YOUR ZAP TEMPLATE LINK>>`**
+> **Use this Zap → [the step-by-step build](docs/zapier.md)** *(one-click template link coming soon)*
+> <!-- MAINTAINER: replace the docs/zapier.md link above with the published Zap template link -->
 >
-> *(Until the maintainer publishes the shared template, this link points to the step-by-step build doc below — it is NOT a one-click button yet.)* In the meantime, follow [`docs/zapier.md`](docs/zapier.md) to build the four steps by hand.
+> Until the shared template is published, that link takes you to [`docs/zapier.md`](docs/zapier.md), which walks you through building the four steps by hand — exact prompt text, URL, headers, and JSON body included. Note: the AI step (AI by Zapier) needs a **Zapier Professional plan or higher**.
 
-What happens after you click:
+Once the template link is live, here is what clicking it will do:
 
-1. **Copy** — the link opens a copy of the BackTalk Zap in **your** Zapier account, with the apps and events already chosen (Quo "Call transcript completed" → AI step → create a task).
+1. **Copy** — the link will open a copy of the BackTalk Zap in **your** Zapier account, with the apps and events already chosen (Quo "Call transcript completed" → AI step → create a task).
 2. **Connect your two accounts** — authorize your own Quo account (paste your Quo API key) and your AI provider. That is two connection screens, not one click.
 3. **Re-enter the fields the template can't carry** — Zapier templates copy the *steps* but drop every *value* you'd typed in. So you re-paste the extraction prompt into the AI step and rebuild the task-creation step (it posts to the Quo Tasks API with your key in the `Authorization` header). [`docs/zapier.md`](docs/zapier.md) gives you the exact prompt text, URL, header, and JSON body to paste.
 
@@ -44,13 +45,14 @@ Honest note: because the task-creation leg uses a Webhooks/Custom Request step, 
 
 **One click to copy, then two connections.**
 
-> **Use this scenario → `<<PASTE YOUR MAKE SCENARIO LINK>>`**
+> **Use this scenario → [the Make setup guide](docs/make.md)** *(one-click scenario link coming soon)*
+> <!-- MAINTAINER: replace the docs/make.md link above with the published Make public scenario-sharing link -->
 >
-> *(Until the maintainer publishes the shared scenario, this link points to the blueprint import below — see [Other ways to build it yourself](#other-ways-to-build-it-yourself). That is the slower path, not a one-click button.)*
+> Until the shared scenario is published, that link takes you to [`docs/make.md`](docs/make.md), which covers both routes: the shared-link copy (once live) and the blueprint import (see [Other ways to build it yourself](#other-ways-to-build-it-yourself)).
 
-What happens after you click:
+Once the scenario link is live, here is what clicking it will do:
 
-1. **Copy** — anyone with the link can preview the scenario in their browser with no account. Logged in to Make, one click drops a copy into your account, fully wired (Watch new call transcripts → AI/HTTP step → HTTP POST to the Quo Tasks API).
+1. **Copy** — anyone with the link will be able to preview the scenario in their browser with no account. Logged in to Make, one click drops a copy into your account, fully wired (Watch new call transcripts → AI/HTTP step → HTTP POST to the Quo Tasks API).
 2. **Connect your accounts** — Make never copies credentials. You authorize your Quo connection (generate a Quo API key in **Settings → API** and paste it) and re-select that connection inside the transcript trigger.
 3. **Paste your keys into the HTTP steps** — your AI provider key for the analysis step, and your Quo API key as the raw `Authorization` header on the task-creation step. Then turn the scenario on (imported scenarios arrive switched off).
 
@@ -61,8 +63,10 @@ Transcripts are the fuel, and they aren't free. BackTalk needs a paid **Quo Busi
 ## What you'll need
 
 - **A Quo (formerly OpenPhone) Business or Scale plan with call recording on** — that's what produces the transcripts BackTalk reads. Transcripts require Business or higher.
-- **An AI provider key** — OpenRouter, OpenAI, Anthropic, or Groq work out of the box; or run it fully local with Ollama / LM Studio if you want transcripts to stay on your own hardware.
+- **An AI provider key** — OpenRouter, OpenAI, Anthropic, or Groq work out of the box; or run it fully local with Ollama / LM Studio if you want transcripts to stay on your own hardware. Cost reality: with a small model this runs a few cents per hundred calls — or free with local Ollama.
 - **About 2 minutes to connect accounts** — copy the workflow, authorize Quo and your AI provider, paste your keys, turn it on.
+
+**How do I know it's working?** Make a test call: when the transcript completes, a task appears on the call's contact (self-hosters can watch the `[DRY_RUN]` log first). **How do I turn it off?** Turn the Zap or scenario off — or stop the server if you self-host.
 
 ## What this does NOT do
 
@@ -137,10 +141,11 @@ cp .env.example .env     # fill in QUO_API_KEY, QUO_WEBHOOK_SECRET, LLM_API_KEY,
 node server.js           # listens on :8787
 ```
 
-**Test locally first** — no account, no signature, no writes:
+**Test locally first** — no Quo account, no signature, no writes — you only need your LLM key (or a local Ollama):
 
 ```bash
 ALLOW_UNSIGNED=1 DRY_RUN=1 node server.js
+# Windows PowerShell: $env:ALLOW_UNSIGNED='1'; $env:DRY_RUN='1'; node server.js
 # in another terminal:
 curl -X POST localhost:8787/webhook \
   -H "content-type: application/json" \
@@ -231,8 +236,8 @@ If you'd rather assemble the workflow in a no-code tool from a versioned file (i
 
 | Path | File | One-line caveat |
 |---|---|---|
-| n8n | `blueprints/n8n-backtalk.json` | Full validation layer in Code nodes; needs Raw Body on, and `crypto` allowed as a builtin. |
-| Make (blueprint import) | `blueprints/make-backtalk.blueprint.json` | Download → scenario builder → ellipsis menu → Import Blueprint → choose the file. This is the more-steps path; the shared-scenario link above is the one-click Make route. You still add your own Quo connection and paste your API key afterward. |
+| n8n | `blueprints/n8n-backtalk.json` | Full validation layer in Code nodes; needs Raw Body on, and `crypto` allowed as a builtin. Works on n8n Cloud via the workflow's Config node; self-hosted n8n can use host env vars instead. |
+| Make (blueprint import) | `blueprints/make-backtalk.blueprint.json` | Download → scenario builder → ellipsis menu → Import Blueprint → choose the file. This is the more-steps path; once the maintainer publishes the shared scenario, the link above becomes the one-click Make route. You still add your own Quo connection and paste your API key afterward. Full setup guide: [`docs/make.md`](docs/make.md). |
 | Zapier (step-by-step) | `docs/zapier.md` | Zaps aren't cleanly exportable, so this is a step-by-step build with sample payloads at every step — also the interim destination of the "Use this Zap" link until the template is published. |
 
 ## Beyond the hook

@@ -8,7 +8,7 @@ There are **two ways to get the wired scenario into your account**. Both end wit
 [Watch new call transcripts]  →  [HTTP: LLM extract]  →  [HTTP: POST /v1/tasks]
 ```
 
-- **Option 1 — Use this scenario (shared link).** The maintainer published a public scenario-sharing link. You preview it in your browser, then copy it into your account in one click. **Recommended for most people.**
+- **Option 1 — Use this scenario (shared link).** Once the maintainer has published the public scenario-sharing link, you preview it in your browser, then copy it into your account in one click. **Recommended for most people once the link is live** — until then, use Option 2.
 - **Option 2 — Import the blueprint (.json file).** You download `blueprints/make-backtalk.blueprint.json` and import it. Good if you want a versioned file or air-gapped distribution.
 
 **Neither option is "one click then done."** Both land the *wiring* fast, but **neither carries connections, API keys, or credentials** — Make's docs are explicit that a shared scenario "excludes API keys, passwords, and other details used to create a connection," and that blueprint importers "still need to create connections for their accounts after importing." So after either gesture, you authorize your Quo connection and paste a couple of keys before the first run. Honest framing: **one click to get the wiring, then 2–4 paste/authorize steps.**
