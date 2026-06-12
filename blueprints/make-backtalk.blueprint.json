@@ -297,7 +297,7 @@
           "value": "backtalk-make/0.1"
          }
         ],
-        "data": "{\"title\":\"{{replace(replace(substring(ifempty(7.title; \"Follow up on call promise\"); 0; 80); toString(toBinary(\"Ig==\"; \"base64\")); \"'\"); newline; \" \")}}\",\"description\":\"{{replace(replace(substring(ifempty(7.detail; \"\"); 0; 200); toString(toBinary(\"Ig==\"; \"base64\")); \"'\"); newline; \" \")}}\\nQuote: \\\"{{replace(replace(ifempty(7.verbatim_quote; \"\"); toString(toBinary(\"Ig==\"; \"base64\")); \"'\"); newline; \" \")}}\\\"\\nSpoken due: {{replace(replace(ifempty(7.due_spoken; \"n/a\"); toString(toBinary(\"Ig==\"; \"base64\")); \"'\"); newline; \" \")}}\\nSource: backtalk ref:{{4.callId}}/{{7.__IMTINDEX__}}\",\"activityId\":\"{{4.callId}}\",\"dueDate\":\"{{replace(replace(7.due_iso; toString(toBinary(\"Ig==\"; \"base64\")); \"'\"); newline; \" \")}}\"}",
+        "data": "{\"title\":\"{{replace(replace(substring(ifempty(7.title; \"Follow up on call promise\"); 0; 80); toString(toBinary(\"Ig==\"; \"base64\")); \"'\"); newline; \" \")}}\",\"description\":\"{{replace(replace(substring(ifempty(7.detail; \"\"); 0; 200); toString(toBinary(\"Ig==\"; \"base64\")); \"'\"); newline; \" \")}}\\nQuote: \\\"{{replace(replace(ifempty(7.verbatim_quote; \"\"); toString(toBinary(\"Ig==\"; \"base64\")); \"'\"); newline; \" \")}}\\\"\\nSpoken due: {{replace(replace(ifempty(7.due_spoken; \"n/a\"); toString(toBinary(\"Ig==\"; \"base64\")); \"'\"); newline; \" \")}}\\nSource: backtalk ref:{{4.callId}}/{{7.__IMTINDEX__}}\",\"activityId\":\"{{4.callId}}\",\"dueDate\":\"{{replace(replace(toString(7.due_iso); toString(toBinary(\"Ig==\"; \"base64\")); \"'\"); newline; \" \")}}\"}",
         "serializeUrl": false
        },
        "metadata": {
