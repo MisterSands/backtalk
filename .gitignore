@@ -10,5 +10,9 @@ node_modules/
 # idempotency store (call-id state, written at runtime)
 .idempotency.json
 
+# local task ledger (opt-in NDJSON append-log; task metadata, never transcripts)
+.backtalk-ledger.ndjson
+*.ndjson
+
 # logs
 *.log

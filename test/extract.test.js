@@ -174,6 +174,23 @@ test("low confidence dropped at default MIN_CONFIDENCE, kept when lowered", () =
   assert.equal(kept.commitments.length, 1);
 });
 
+test("LOW_CONFIDENCE_MODE=review keeps the item flagged and prefixes the title", () => {
+  const lowConf = { ...agentPromise1, confidence: "low" };
+  const r = parseAndValidate(wrap([lowConf]), { ...baseCtx, lowConfidenceMode: "review" });
+  assert.equal(r.commitments.length, 1);
+  assert.equal(r.commitments[0].review, true);
+  assert.ok(r.audit.some((a) => a.reason === "low_confidence_review" && !a.dropped));
+
+  const p = buildTaskPayload(r.commitments[0], { callId: CALL_ID, index: 1 });
+  assert.ok(p.title.startsWith("[Review] "));
+  assert.ok(p.title.length <= 80);
+
+  // at-or-above threshold commitments are untouched in review mode
+  const normal = parseAndValidate(wrap([agentPromise1]), { ...baseCtx, lowConfidenceMode: "review" });
+  assert.equal(normal.commitments[0].review, false);
+  assert.ok(!buildTaskPayload(normal.commitments[0], { callId: CALL_ID, index: 1 }).title.startsWith("[Review]"));
+});
+
 test("unknown enums drop the item", () => {
   const badWho = { ...agentPromise1, who: "assistant" };
   const badConf = { ...agentPromise1, confidence: "certain" };

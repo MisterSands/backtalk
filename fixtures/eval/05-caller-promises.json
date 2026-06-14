@@ -1,0 +1,22 @@
+{
+  "name": "caller-promises",
+  "description": "Caller-side commitments with includeCaller=true: the customer promises to send documents and call back. Expect both caller tasks plus the one agent task.",
+  "callDateIso": "2026-06-10T13:20:00.000Z",
+  "timezone": "America/New_York",
+  "includeCaller": true,
+  "dialogue": [
+    { "content": "Hannon & DePalma, this is Dana. How can I help?", "userId": "USagent05", "identifier": null },
+    { "content": "Hi Dana, it's Robin Mercer about my consultation next week.", "userId": null, "identifier": "+15555550654" },
+    { "content": "Hi Robin. Before we meet, we still need your financial disclosure documents.", "userId": "USagent05", "identifier": null },
+    { "content": "Right, sorry. I'll email you the financial disclosure documents by Monday.", "userId": null, "identifier": "+15555550654" },
+    { "content": "Thank you. I'll prepare the draft agreement for our meeting once those come in.", "userId": "USagent05", "identifier": null },
+    { "content": "Great. And I'll call back Friday to confirm the meeting time.", "userId": null, "identifier": "+15555550654" },
+    { "content": "Sounds good, Robin. Talk Friday.", "userId": "USagent05", "identifier": null }
+  ],
+  "expect": [
+    { "quote_contains": "email you the financial disclosure documents by Monday", "who": "caller", "due": true },
+    { "quote_contains": "call back Friday to confirm", "who": "caller", "due": true },
+    { "quote_contains": "prepare the draft agreement", "who": "agent", "due": false }
+  ],
+  "forbid": []
+}

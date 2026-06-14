@@ -26,7 +26,10 @@ Claude reads the blueprint, builds the automation in your Make / Zapier / n8n (o
 
 - **Catch every promise, automatically.** "I'll send that over," "I'll call you back Friday," "let me get you a quote" — each becomes a dated task on the right contact the instant the transcript lands.
 - **Hear both sides.** Flip one setting and it also files what *the caller* promised, so you know exactly when to nudge.
-- **Run on any AI you want.** OpenRouter, OpenAI, Anthropic, Groq — or fully local Ollama / LM Studio, so transcripts never leave your hardware.
+- **Assign it to the right person.** `ASSIGN_MODE=call-user` puts the task on the rep who was actually on the call; per-line profiles give your sales line, support line, and the owner's personal line different rules (or skip a line entirely).
+- **Run on any AI you want.** OpenRouter, OpenAI, Anthropic, Groq — or fully local Ollama / LM Studio, so transcripts never leave your hardware. A bundled eval harness (`node eval.mjs`) scores any model on recall, precision, and injection safety so you can pick with evidence.
+- **See it all in one place.** An optional read-only dashboard shows every BackTalk task across all your lines, grouped by call; an optional daily digest task tells you what was filed, what's due soon, and what validation dropped (and why).
+- **Catch up on missed calls.** `node backfill.mjs --since 7d` replays the calls from before you installed it (or from downtime) through the same hardened pipeline — duplicates are impossible by design.
 - **Be the hook the rest of your stack hangs off.** It's open and yours to extend — fan promises out to a CRM, a Slack channel, or a daily "did it actually happen?" reconciliation.
 
 Real tasks, linked to the call, with the due date when one was spoken. That's the whole idea.

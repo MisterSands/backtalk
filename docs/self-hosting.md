@@ -122,7 +122,10 @@ Everything is configured via `.env` (see [`.env.example`](../.env.example) for t
 | `MIN_CALL_SECONDS` | no | `30` | Calls shorter than this are skipped (voicemail/misdial guard) before any LLM spend. |
 | `MAX_TASKS_PER_CALL` | no | `8` | Post-validation cap. Hard ceiling 8 — env may lower it, never raise it. |
 | `MAX_TRANSCRIPT_CHARS` | no | `24000` | Head 60% + tail 40% cap with `[... middle trimmed ...]` marker (trim is model-input only; the full transcript is never stored). |
-| `MIN_CONFIDENCE` | no | `medium` | Drop extracted commitments below this (`low`\|`medium`\|`high`). |
+| `MIN_CONFIDENCE` | no | `medium` | Threshold for extracted commitments (`low`\|`medium`\|`high`). |
+| `LOW_CONFIDENCE_MODE` | no | `drop` | What happens below the threshold: `drop` (discard) or `review` (file with a `[Review]` title prefix so a human triages). |
+| `ASSIGN_MODE` | no | `default` | `default` = `QUO_DEFAULT_ASSIGNEE` / per-line assignee; `call-user` = assign to the rep who was on the call (structural `userId` from `GET /calls`); `none` = unassigned. |
+| `LINE_CONFIG` | no | unset | JSON object of per-line profiles keyed by E.164 or `PN...` id: `skip`, `minConfidence`, `assignee`, `includeCallerCommitments`, `maxTasksPerCall`. |
 | `OWNED_NUMBERS` | no | unset | Fallback speaker map: `+15555550100=Alex Agent,+15555550101=Bailey Agent`. Matching identifiers are forced to AGENT. |
 | `QUO_DEFAULT_ASSIGNEE` | no | unset | User id applied as `assignedTo` on every created task. |
 | `TIMEZONE` | no | `UTC` | IANA tz passed into the prompt metadata for relative-date resolution ("tomorrow", "Tuesday"). |
@@ -134,7 +137,63 @@ Everything is configured via `.env` (see [`.env.example`](../.env.example) for t
 | `SIGNATURE_SKEW_SECONDS` | no | `300` | Replay window: reject signatures older/newer than this. |
 | `ALLOW_UNSIGNED` | no | `0` | `1` → skip signature verification (LOCAL DEV ONLY; the server logs a warning every request). |
 | `FALLBACK_POLL` | no | `0` | `1` → on `call.completed`, retry-poll the transcript endpoint. Only for accounts that can't subscribe to `call.transcript.completed`. Requires a long-running host. |
-| `REPLAY_TOKEN` | no | unset | If set, enables `POST /replay` (manual re-run) gated by the `x-replay-token` header (constant-time compare). |
+| `REPLAY_TOKEN` | no | unset | If set, enables `POST /replay` (manual re-run) gated by the `x-replay-token` header (constant-time compare). Also required by `backfill.mjs`. |
+| `LEDGER_FILE` | no | unset | NDJSON append-log of filed tasks (metadata only, never transcripts). Powers dashboard drop stats, the digest, and offline visualization. |
+| `DASHBOARD_TOKEN` | no | unset | If set, enables the read-only dashboard at `GET /dashboard?token=...`. |
+| `DIGEST` | no | `0` | `1` → file one daily rollup task (filed / due-soon / dropped-with-reasons). Requires `LEDGER_FILE`. |
+| `DIGEST_HOUR` | no | `17` | Hour (0–23, in `TIMEZONE`) after which the digest files. |
+| `DIGEST_PHONE_NUMBER_ID` | no | first line | `PN...` id the digest task is linked to. |
+| `SETUP_MODE` | no | `0` | `1` → guided onboarding wizard at `GET /setup`; boots with incomplete config. Localhost only — turn off after setup. |
+
+## Beyond the webhook: the opt-in extras
+
+All off by default — the stateless four-stage core never changes. Each is one or two env vars.
+
+### Setup wizard (`SETUP_MODE=1`)
+
+The guided alternative to editing `.env` by hand:
+
+```bash
+SETUP_MODE=1 node server.js
+# open http://localhost:8787/setup
+```
+
+Four steps in the browser: validate your Quo key live (it lists your lines), get the exact webhook URL + secret field, test your LLM against a bundled sample call (including a prompt-injection attempt the pipeline should refuse), and download a generated `.env`. Keys are posted only to your local server to run the tests and are never stored. **Localhost only — remove `SETUP_MODE=1` once configured.**
+
+### Dashboard (`DASHBOARD_TOKEN=...`)
+
+Read-only view of every BackTalk task across **all lines**, grouped by call, at `https://<host>/dashboard?token=<value>`. Tasks are identified by the `Source: backtalk ref:` marker, so it works retroactively for everything BackTalk ever filed — no stored state needed. With a ledger configured it also shows what validation dropped in the last 7 days and why. In `DRY_RUN` (or keyless) setups it falls back to a ledger-only view so you can visualize what *would* be filed.
+
+### Local ledger (`LEDGER_FILE=...`)
+
+One JSON line per outcome (`task_created`, `task_logged`, `call_processed` with audit reasons, `digest_filed`). Task metadata only — the same text that already went to Quo — **never transcripts**. It's a convenience cache, not a source of truth; corrupt lines are skipped, and deleting the file is always safe.
+
+### Daily digest (`DIGEST=1`, requires the ledger)
+
+Once a day after `DIGEST_HOUR`, BackTalk files one rollup task: how many promises it filed from how many calls, what's due within 48h, and what validation dropped (with reasons). The point is trust — you see what the extraction layer did *and what it refused to do* without reading server logs.
+
+### Backfill (`node backfill.mjs`)
+
+Replays recent calls through a running server — for the day you installed BackTalk, or after downtime:
+
+```bash
+node backfill.mjs --since 7d --dry-run    # list what it would replay
+node backfill.mjs --since 7d              # replay through the server's /replay
+```
+
+Needs `QUO_API_KEY` and `REPLAY_TOKEN` (env or `.env`; the token must also be set on the server). Idempotency and the `ref:` marker dedupe make re-runs safe — calls that already produced tasks are skipped.
+
+### Eval harness (`node eval.mjs`)
+
+Scores your model + prompt against the corpus in [`fixtures/eval/`](../fixtures/eval/) using the real extraction path: recall (did it find the spoken promises?), precision (did it invent extras?), and safety (did injection payloads leak into tasks?).
+
+```bash
+node eval.mjs                                      # configured model
+node eval.mjs --model groq/llama-3.3-70b-versatile # compare a candidate
+node eval.mjs --runs 3 --only injection            # variance on one case
+```
+
+Run it before switching models and before opening a prompt PR — if recall drops or the injection case leaks, you'll see it here first.
 
 ## Prerequisites & plan notes
 

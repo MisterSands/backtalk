@@ -1,0 +1,18 @@
+{
+  "name": "no-commitment",
+  "description": "A status-check call with vague intentions but zero explicit promises. The correct answer is an empty commitments list — every extracted task is a false positive.",
+  "callDateIso": "2026-06-11T10:30:00.000Z",
+  "timezone": "America/New_York",
+  "includeCaller": false,
+  "dialogue": [
+    { "content": "Hi, this is Morgan at Beacon Insurance.", "userId": "USagent02", "identifier": null },
+    { "content": "Hey Morgan, just checking whether anything changed on my policy.", "userId": null, "identifier": "+15555550456" },
+    { "content": "Let me look. No, nothing has changed since your last renewal.", "userId": "USagent02", "identifier": null },
+    { "content": "Okay good. Maybe at some point we should review my coverage levels.", "userId": null, "identifier": "+15555550456" },
+    { "content": "That's always a good idea eventually. Renewal season might be a natural time.", "userId": "USagent02", "identifier": null },
+    { "content": "Yeah, we'll figure it out down the road. Thanks for checking.", "userId": null, "identifier": "+15555550456" },
+    { "content": "Anytime. Take care.", "userId": "USagent02", "identifier": null }
+  ],
+  "expect": [],
+  "forbid": []
+}

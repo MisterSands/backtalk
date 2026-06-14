@@ -25,6 +25,10 @@ import {
   buildTaskPayload,
 } from "./lib/extract.js";
 import { chatJson } from "./lib/llm.js";
+import { createLedger } from "./lib/ledger.js";
+import { createLineResolver, parseLineConfig } from "./lib/lines.js";
+import { handleDashboard } from "./lib/dashboard.js";
+import { handleSetup } from "./lib/setup.js";
 
 // ---------------------------------------------------------------- logging
 
@@ -110,7 +114,21 @@ const cfg = {
   allowUnsigned: flag(env.ALLOW_UNSIGNED),
   fallbackPoll: flag(env.FALLBACK_POLL),
   replayToken: env.REPLAY_TOKEN || null,
+  // --- community features (all opt-in) ---
+  ledgerFile: env.LEDGER_FILE || null,
+  lowConfidenceMode: env.LOW_CONFIDENCE_MODE === "review" ? "review" : "drop",
+  assignMode: ["none", "default", "call-user"].includes(env.ASSIGN_MODE) ? env.ASSIGN_MODE : "default",
+  lineConfig: parseLineConfig(env.LINE_CONFIG),
+  dashboardToken: env.DASHBOARD_TOKEN || null,
+  digest: flag(env.DIGEST),
+  digestHour: Math.min(Math.max(num(env.DIGEST_HOUR, 17), 0), 23),
+  digestPhoneNumberId: env.DIGEST_PHONE_NUMBER_ID || null,
+  setupMode: flag(env.SETUP_MODE),
 };
+if (cfg.lineConfig.__error) {
+  log("warn", `config: ${cfg.lineConfig.__error} — per-line profiles disabled`);
+  cfg.lineConfig = {};
+}
 
 const bootErrors = [];
 if (!cfg.llmApiKey) bootErrors.push("LLM_API_KEY is required");
@@ -122,8 +140,14 @@ if (cfg.webhookSecrets.length === 0 && !cfg.allowUnsigned) {
   bootErrors.push("QUO_WEBHOOK_SECRET is required (or ALLOW_UNSIGNED=1 for local dev only)");
 }
 if (bootErrors.length > 0) {
-  for (const e of bootErrors) log("error", `config: ${e}`);
-  process.exit(1);
+  if (cfg.setupMode) {
+    // Setup mode boots with incomplete config on purpose — the wizard at
+    // /setup exists to produce the missing values. Webhooks still verify.
+    for (const e of bootErrors) log("warn", `config (setup mode, non-fatal): ${e}`);
+  } else {
+    for (const e of bootErrors) log("error", `config: ${e}`);
+    process.exit(1);
+  }
 }
 
 // ---------------------------------------------------------------- idempotency
@@ -183,6 +207,18 @@ class IdempotencyStore {
 
 const store = new IdempotencyStore({ max: cfg.idempotencyMax, file: cfg.idempotencyFile });
 const quo = cfg.quoApiKey ? createQuoClient({ apiKey: cfg.quoApiKey }) : null;
+const ledger = createLedger({ file: cfg.ledgerFile });
+const lineResolver = createLineResolver({ quo });
+
+// Lightweight liveness counters for /healthz — process-local, no PII.
+const health = {
+  startedAt: new Date().toISOString(),
+  webhooksReceived: 0,
+  callsProcessed: 0,
+  tasksCreated: 0,
+  lastWebhookAt: null,
+  lastTaskAt: null,
+};
 
 // ---------------------------------------------------------------- helpers
 
@@ -257,7 +293,24 @@ async function runExtraction(systemPrompt, userMessage, validateCtx) {
 
 // ---------------------------------------------------------------- task creation
 
-async function createTasks(commitments, { callId, callerE164 }) {
+function ledgerTaskEntry(commitment, payload, { callId, index, lineCtx }) {
+  return {
+    callId,
+    ref: `${callId}/${index}`,
+    title: payload.title,
+    quote: commitment.verbatim_quote,
+    spokenDue: commitment.due_spoken,
+    dueDate: payload.dueDate ?? null,
+    confidence: commitment.confidence,
+    review: commitment.review === true,
+    who: commitment.who,
+    assignedTo: payload.assignedTo ?? null,
+    phoneNumberId: lineCtx?.phoneNumberId ?? null,
+    lineName: lineCtx?.lineName ?? null,
+  };
+}
+
+async function createTasks(commitments, { callId, callerE164, assignedTo = null, lineCtx = null }) {
   let created = 0;
   let logged = 0;
   let duplicates = 0;
@@ -266,8 +319,9 @@ async function createTasks(commitments, { callId, callerE164 }) {
   // DRY_RUN (or no API key) → log-only mode: print exact intended payloads.
   if (cfg.dryRun || !quo) {
     commitments.forEach((commitment, i) => {
-      const payload = buildTaskPayload(commitment, { callId, index: i + 1, assignedTo: cfg.defaultAssignee });
+      const payload = buildTaskPayload(commitment, { callId, index: i + 1, assignedTo });
       log("info", "[DRY_RUN] would create task", { payload });
+      ledger?.append("task_logged", { mode: "dry_run", ...ledgerTaskEntry(commitment, payload, { callId, index: i + 1, lineCtx }) });
       logged += 1;
     });
     return { created, logged, duplicates, transient: false };
@@ -290,10 +344,11 @@ async function createTasks(commitments, { callId, callerE164 }) {
       duplicates += 1;
       continue;
     }
-    const payload = buildTaskPayload(commitments[i], { callId, index: i + 1, assignedTo: cfg.defaultAssignee });
+    const payload = buildTaskPayload(commitments[i], { callId, index: i + 1, assignedTo });
 
     if (logOnly) {
       log("warn", "FALLBACK:LOG_ONLY task payload", { payload });
+      ledger?.append("task_logged", { mode: "fallback", ...ledgerTaskEntry(commitments[i], payload, { callId, index: i + 1, lineCtx }) });
       logged += 1;
       continue;
     }
@@ -326,6 +381,12 @@ async function createTasks(commitments, { callId, callerE164 }) {
 
     if (r.ok) {
       created += 1;
+      health.tasksCreated += 1;
+      health.lastTaskAt = new Date().toISOString();
+      ledger?.append("task_created", {
+        taskId: r.data?.data?.taskId ?? r.data?.data?.id ?? null,
+        ...ledgerTaskEntry(commitments[i], payload, { callId, index: i + 1, lineCtx }),
+      });
       continue;
     }
     if (r.status >= 500 || r.status === 429 || r.status === 0) {
@@ -335,6 +396,7 @@ async function createTasks(commitments, { callId, callerE164 }) {
     // Persistent 4xx → degrade to log-only for the rest of this delivery.
     logOnly = true;
     log("warn", "FALLBACK:LOG_ONLY task payload", { status: r.status, error: r.error, payload });
+    ledger?.append("task_logged", { mode: "fallback", ...ledgerTaskEntry(commitments[i], payload, { callId, index: i + 1, lineCtx }) });
     logged += 1;
   }
   return { created, logged, duplicates, transient: false };
@@ -371,6 +433,27 @@ async function processTranscript(transcriptObj, { force = false } = {}) {
     store.set(callId, "skipped");
     return { code: 200, body: { ok: true, callId, skipped: "too_short", duration } };
   }
+
+  // Per-line context (one cached GET /calls/{id}) — resolved only when a
+  // feature needs it: per-line profiles, call-user assignment, or the ledger.
+  let lineCtx = null;
+  const hasLineConfig = Object.keys(cfg.lineConfig).length > 0;
+  if (quo && (hasLineConfig || cfg.assignMode === "call-user" || ledger)) {
+    lineCtx = await lineResolver.callContext(callId);
+  }
+  const profile = lineResolver.profileFor(cfg.lineConfig, lineCtx);
+  if (profile?.skip) {
+    store.set(callId, "skipped");
+    return { code: 200, body: { ok: true, callId, skipped: "line_skipped", line: lineCtx?.lineNumber ?? lineCtx?.phoneNumberId } };
+  }
+
+  // Assignee routing: none | default (global/per-line id) | call-user (the
+  // rep who handled the call, structural userId from GET /calls — never from
+  // transcript text).
+  let assignedTo = null;
+  if (cfg.assignMode === "call-user") assignedTo = lineCtx?.userId ?? profile?.assignee ?? cfg.defaultAssignee;
+  else if (cfg.assignMode === "default") assignedTo = profile?.assignee ?? cfg.defaultAssignee;
+
   const transcriptFlat = flattenTranscript(dialogue, { ownedNumbers: cfg.ownedNumbers });
   if (!transcriptFlat) {
     store.set(callId, "skipped");
@@ -393,9 +476,10 @@ async function processTranscript(transcriptObj, { force = false } = {}) {
   const extraction = await runExtraction(buildSystemPrompt(), userMessage, {
     transcriptFlat: capped,
     callDateIso,
-    includeCaller: cfg.includeCaller,
-    maxTasks: cfg.maxTasksPerCall,
-    minConfidence: cfg.minConfidence,
+    includeCaller: profile?.includeCallerCommitments ?? cfg.includeCaller,
+    maxTasks: profile?.maxTasksPerCall ?? cfg.maxTasksPerCall,
+    minConfidence: profile?.minConfidence ?? cfg.minConfidence,
+    lowConfidenceMode: cfg.lowConfidenceMode,
   });
   if (!extraction.ok) {
     store.set(callId, "failed"); // provider redelivery will re-claim
@@ -414,13 +498,25 @@ async function processTranscript(transcriptObj, { force = false } = {}) {
   });
   debug("validation audit", { callId, audit });
 
-  const result = await createTasks(commitments, { callId, callerE164: externalE164(dialogue) });
+  const result = await createTasks(commitments, { callId, callerE164: externalE164(dialogue), assignedTo, lineCtx });
   if (result.transient) {
     store.set(callId, "failed");
     return { code: 500, body: { ok: false, callId, error: "task_create" } };
   }
 
   store.set(callId, "done");
+  health.callsProcessed += 1;
+  ledger?.append("call_processed", {
+    callId,
+    extracted: commitments.length,
+    created: result.created,
+    logged: result.logged,
+    duplicates: result.duplicates,
+    dropped: droppedItems,
+    auditReasons: audit.map((a) => a.reason),
+    phoneNumberId: lineCtx?.phoneNumberId ?? null,
+    lineName: lineCtx?.lineName ?? null,
+  });
   return {
     code: 200,
     body: {
@@ -487,6 +583,8 @@ function attemptPoll(callId, attempt) {
 // ---------------------------------------------------------------- routes
 
 async function handleWebhook(req, res) {
+  health.webhooksReceived += 1;
+  health.lastWebhookAt = new Date().toISOString();
   let raw;
   try {
     raw = await readBody(req);
@@ -565,18 +663,155 @@ async function handleReplay(req, res) {
   return send(res, out.code, out.body);
 }
 
+function handleHealthz(res) {
+  return send(res, 200, {
+    ok: true,
+    startedAt: health.startedAt,
+    uptimeSeconds: Math.round(process.uptime()),
+    lastWebhookAt: health.lastWebhookAt,
+    lastTaskAt: health.lastTaskAt,
+    counters: {
+      webhooksReceived: health.webhooksReceived,
+      callsProcessed: health.callsProcessed,
+      tasksCreated: health.tasksCreated,
+    },
+    config: {
+      // Presence/mode only — never secret values.
+      dryRun: cfg.dryRun,
+      allowUnsigned: cfg.allowUnsigned,
+      provider: cfg.llmProvider,
+      model: cfg.llmModel || null,
+      quoConfigured: Boolean(cfg.quoApiKey),
+      signatureConfigured: cfg.webhookSecrets.length > 0,
+      assignMode: cfg.assignMode,
+      lowConfidenceMode: cfg.lowConfidenceMode,
+      lineProfiles: Object.keys(cfg.lineConfig).length,
+    },
+    features: {
+      ledger: Boolean(ledger),
+      dashboard: Boolean(cfg.dashboardToken),
+      digest: cfg.digest,
+      setupMode: cfg.setupMode,
+      fallbackPoll: cfg.fallbackPoll,
+      replay: Boolean(cfg.replayToken),
+    },
+  });
+}
+
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url ?? "/", "http://localhost");
-    if (req.method === "GET" && url.pathname === "/healthz") return send(res, 200, { ok: true });
+    if (req.method === "GET" && url.pathname === "/healthz") return handleHealthz(res);
     if (req.method === "POST" && url.pathname === "/webhook") return await handleWebhook(req, res);
     if (req.method === "POST" && url.pathname === "/replay") return await handleReplay(req, res);
+    if (cfg.dashboardToken && req.method === "GET" && url.pathname.startsWith("/dashboard")) {
+      return await handleDashboard(req, res, url, {
+        token: cfg.dashboardToken,
+        quo,
+        ledger,
+        lineResolver,
+        send,
+        timingSafeStringEqual,
+      });
+    }
+    if (cfg.setupMode && url.pathname.startsWith("/setup")) {
+      return await handleSetup(req, res, url, { cfg, readBody, send, log });
+    }
     return send(res, 404, { ok: false, error: "not found" });
   } catch (err) {
     log("error", "unhandled request error", { error: String(err) });
     if (!res.headersSent) send(res, 500, { ok: false, error: "internal" });
   }
 });
+
+// ---------------------------------------------------------------- daily digest
+
+/** Local calendar date + hour in cfg.timezone, via Intl (no dependencies). */
+function localDateHour(timezone) {
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(new Date());
+    const get = (type) => parts.find((p) => p.type === type)?.value ?? "";
+    return { date: `${get("year")}-${get("month")}-${get("day")}`, hour: Number(get("hour")) };
+  } catch {
+    const now = new Date();
+    return { date: now.toISOString().slice(0, 10), hour: now.getUTCHours() };
+  }
+}
+
+async function maybeFileDigest() {
+  const { date, hour } = localDateHour(cfg.timezone);
+  if (hour < cfg.digestHour) return;
+  const alreadyFiled = ledger
+    .read({ events: ["digest_filed"] })
+    .some((e) => e.date === date);
+  if (alreadyFiled) return;
+
+  const stats = ledger.stats({ sinceMs: Date.now() - 24 * 3600000 });
+  if (stats.calls === 0 && stats.tasksCreated === 0) {
+    ledger.append("digest_filed", { date, skipped: "no_activity" });
+    return;
+  }
+
+  const dropLines = Object.entries(stats.dropReasons)
+    .filter(([reason]) => reason !== "low_confidence_review")
+    .map(([reason, count]) => `  - ${reason}: ${count}`);
+  const description = [
+    `BackTalk filed ${stats.tasksCreated} task(s) from ${stats.calls} call(s) in the last 24h.`,
+    `Due within 48h: ${stats.dueSoon}.`,
+    stats.tasksLogged ? `Log-only fallbacks (check server logs): ${stats.tasksLogged}.` : null,
+    stats.dropped ? `Dropped by validation: ${stats.dropped}.` : null,
+    dropLines.length ? `Drop reasons:\n${dropLines.join("\n")}` : null,
+    `Source: backtalk digest:${date}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const title = `BackTalk digest ${date} — ${stats.tasksCreated} promise${stats.tasksCreated === 1 ? "" : "s"} filed`;
+
+  // Tasks need exactly one linkage field; a digest isn't tied to a call, so
+  // it lands on a line (DIGEST_PHONE_NUMBER_ID or the first workspace line).
+  let phoneNumberId = cfg.digestPhoneNumberId;
+  if (!phoneNumberId) {
+    const dir = await lineResolver.lines();
+    phoneNumberId = dir.byId.keys().next().value ?? null;
+  }
+  if (!phoneNumberId) {
+    log("warn", "digest skipped: no phoneNumberId available for linkage");
+    return;
+  }
+
+  const payload = { title, description, phoneNumberId };
+  if (cfg.defaultAssignee) payload.assignedTo = cfg.defaultAssignee;
+  if (cfg.dryRun || !quo) {
+    log("info", "[DRY_RUN] would create digest task", { payload });
+    ledger.append("digest_filed", { date, mode: "dry_run" });
+    return;
+  }
+  const r = await quo.createTask(payload);
+  if (r.ok) {
+    ledger.append("digest_filed", { date, taskId: r.data?.data?.taskId ?? null });
+    log("info", "daily digest filed", { date, tasks: stats.tasksCreated });
+  } else {
+    log("warn", "digest task create failed", { status: r.status, error: r.error });
+  }
+}
+
+if (cfg.digest) {
+  if (!ledger) {
+    log("warn", "DIGEST=1 requires LEDGER_FILE — digest disabled");
+  } else {
+    const tick = () => maybeFileDigest().catch((err) => log("warn", "digest tick error", { error: String(err) }));
+    setInterval(tick, 5 * 60000).unref?.();
+    setTimeout(tick, 30000).unref?.(); // first check shortly after boot
+  }
+}
 
 server.listen(cfg.port, () => {
   log("info", "BackTalk listening", {
@@ -586,5 +821,16 @@ server.listen(cfg.port, () => {
     fallbackPoll: cfg.fallbackPoll,
     provider: cfg.llmProvider,
     model: cfg.llmModel,
+    ledger: Boolean(ledger),
+    dashboard: Boolean(cfg.dashboardToken),
+    digest: cfg.digest,
+    assignMode: cfg.assignMode,
+    setupMode: cfg.setupMode,
   });
+  if (cfg.setupMode) {
+    console.warn(
+      `\x1b[33m[BackTalk] SETUP_MODE=1 — setup wizard live at http://localhost:${cfg.port}/setup. ` +
+        "Do NOT expose this server publicly while setup mode is on; turn it off once configured.\x1b[0m",
+    );
+  }
 });

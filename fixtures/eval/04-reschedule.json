@@ -1,0 +1,20 @@
+{
+  "name": "reschedule-dates",
+  "description": "A promise whose spoken due date changes mid-call (Wednesday, then corrected to Thursday). Expect ONE task carrying the corrected date — not two tasks, not the superseded date.",
+  "callDateIso": "2026-06-08T09:15:00.000Z",
+  "timezone": "America/Chicago",
+  "includeCaller": false,
+  "dialogue": [
+    { "content": "Hi Jordan, it's Pat from Lakeside Realty, returning your call about the inspection report.", "userId": "USagent04", "identifier": null },
+    { "content": "Thanks Pat. When can I see it?", "userId": null, "identifier": "+15555550321" },
+    { "content": "I'll send you the inspection report Wednesday.", "userId": "USagent04", "identifier": null },
+    { "content": "Hmm, I'm traveling Wednesday. Could it wait a day?", "userId": null, "identifier": "+15555550321" },
+    { "content": "Sure, actually let's make it Thursday then. I'll send the inspection report Thursday afternoon.", "userId": "USagent04", "identifier": null },
+    { "content": "Thursday afternoon works. Thanks.", "userId": null, "identifier": "+15555550321" }
+  ],
+  "expect": [
+    { "quote_contains": "send the inspection report Thursday afternoon", "who": "agent", "due": true }
+  ],
+  "forbid": [],
+  "maxExpectedTasks": 1
+}
